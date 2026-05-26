@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>全明星小游戏合集 | 7合1</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",Microsoft YaHei,sans-serif;}
+        :root{
+            --bg-main:#0b1020;
+            --bg-card:#121a33;
+            --color-primary:#7209b7;
+            --color-sec:#4cc9f0;
+            --color-accent:#f72585;
+            --text:#e2e8f0;
+            --border:rgba(114,9,183,0.35);
+        }
+        body{
+            background:var(--bg-main);
+            color:var(--text);
+            min-height:100vh;
+            background-image:radial-gradient(circle at 20% 10%,rgba(114,9,183,0.15),transparent 40%),
+            radial-gradient(circle at 80% 90%,rgba(76,201,240,0.1),transparent 40%);
+            overflow-x:hidden;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .container{
+            max-width:1200px;
+            width:100%;
+            padding:2rem;
+            margin:0 auto;
+        }
+
+        /* 首页 */
+        .home-page{text-align:center;padding:2rem 0;}
+        .home-page h1{
+            font-size:3rem;
+            background:linear-gradient(90deg,var(--color-sec),var(--color-accent));
+            -webkit-background-clip:text;
+            color:transparent;
+            margin-bottom:1rem;
+        }
+        .home-desc{opacity:0.7;margin-bottom:2rem;font-size:1.1rem;}
+        .ctrl-bar{
+            display:flex;
+            justify-content:center;
+            gap:1rem;
+            flex-wrap:wrap;
+            margin-bottom:2rem;
+        }
+        .btn{
+            padding:0.8rem 1.8rem;
+            border-radius:50px;
+            border:1px solid var(--border);
+            background:var(--bg-card);
+            color:var(--text);
+            cursor:pointer;
+            transition:all 0.3s;
+            font-size:1rem;
+        }
+        .btn:hover{
+            border-color:var(--color-primary);
+            box-shadow:0 0 15px rgba(114,9,183,0.4);
+            transform:translateY(-2px);
+        }
+        .btn-primary{background:var(--color-primary);border:none;}
+        .game-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:1.5rem;
+        }
+        .game-card{
+            background:var(--bg-card);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:2rem 1.5rem;
+            cursor:pointer;
+            transition:all 0.3s;
+        }
+        .game-card:hover{
+            border-color:var(--color-accent);
+            transform:translateY(-6px);
+            box-shadow:0 8px 30px rgba(114,9,183,0.2);
+        }
+        .game-card h3{font-size:1.4rem;margin-bottom:0.8rem;color:var(--color-sec);}
+        .game-card p{opacity:0.6;font-size:0.95rem;}
+
+        /* 游戏页面：全部居中 */
+        .game-wrap{
+            display:none;
+            text-align:center;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            width:100%;
+            padding:1rem 0;
+        }
+        .game-title{
+            font-size:2rem;
+            margin-bottom:0.8rem;
+            color:var(--color-sec);
+        }
+        .tips{
+            font-size:1rem;
+            color:#ccc;
+            margin-bottom:1rem;
+            line-height:1.5;
+            max-width:600px;
+            padding:0 1rem;
+        }
+        .back-btn{margin-top:1.5rem;}
+        canvas{
+            border:2px solid var(--border);
+            border-radius:12px;
+            background:#000818;
+            display:block;
+        }
+        .score-text,.step-text{
+            margin:0.8rem 0;
+            font-size:1.1rem;
+        }
+
+        /* 难度弹窗 */
+        .modal{
+            display:none;
+            position:fixed;
+            top:0;left:0;
+            width:100vw;height:100vh;
+            background:rgba(0,0,0,0.7);
+            align-items:center;justify-content:center;
+            z-index:99;
+        }
+        .modal-box{
+            background:var(--bg-card);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:2.5rem;
+            text-align:center;
+        }
+        .modal-box h3{margin-bottom:1.5rem;color:var(--color-accent);}
+        .diff-buttons{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+
+        /* 排行榜 */
+        .rank-box{
+            background:var(--bg-card);
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:1.5rem;
+            margin:2rem auto;
+            max-width:400px;
+            text-align:center;
+        }
+        .rank-box h3{color:var(--color-sec);margin-bottom:1rem;}
+        .rank-item{display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border);}
+
+        /* 棋盘类游戏居中 */
+        .g2048,.gobang,.mine{
+            margin:0 auto;
+            display:grid;
+            place-items:center;
+            justify-content:center;
+        }
+        .cell{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:45px;
+            height:45px;
+            font-weight:bold;
+            border-radius:6px;
+            margin:2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 首页 -->
+        <div class="home-page" id="homePage">
+            <h1>🎮 赛博小游戏乐园</h1>
+            <p class="home-desc">贪吃蛇 | 打砖块 | 记忆翻牌 | 俄罗斯方块 | 五子棋 | 2048 | 扫雷</p>
+            <div class="ctrl-bar">
+                <button class="btn btn-primary" id="bgmBtn">🔊 开启背景音乐</button>
+                <button class="btn" id="rankBtn">🏆 本地排行榜</button>
+            </div>
+            <div class="game-grid">
+                <div class="game-card" onclick="openDiff('snake')">
+                    <h3>🐍 贪吃蛇</h3>
+                    <p>经典走位，越长越难</p>
+                </div>
+                <div class="game-card" onclick="openDiff('brick')">
+                    <h3>🧱 打砖块</h3>
+                    <p>弹射消除，解压神器</p>
+                </div>
+                <div class="game-card" onclick="openDiff('memory')">
+                    <h3>🧠 记忆翻牌</h3>
+                    <p>脑力记忆小游戏</p>
+                </div>
+                <div class="game-card" onclick="openDiff('tetris')">
+                    <h3>🧊 俄罗斯方块</h3>
+                    <p>童年经典永不过时</p>
+                </div>
+                <div class="game-card" onclick="openDiff('gobang')">
+                    <h3>⚫ 五子棋</h3>
+                    <p>双人对弈，脑力对决</p>
+                </div>
+                <div class="game-card" onclick="openDiff('game2048')">
+                    <h3>🔢 2048</h3>
+                    <p>数字合并闯关</p>
+                </div>
+                <div class="game-card" onclick="openDiff('mine')">
+                    <h3>💣 扫雷</h3>
+                    <p>经典逻辑推理</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 难度弹窗 -->
+        <div class="modal" id="diffModal">
+            <div class="modal-box">
+                <h3>选择难度</h3>
+                <div class="diff-buttons">
+                    <button class="btn" onclick="startGame('easy')">简单</button>
+                    <button class="btn" onclick="startGame('normal')">普通</button>
+                    <button class="btn" onclick="startGame('hard')">困难</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 排行榜 -->
+        <div class="rank-box" id="rankBox" style="display:none;">
+            <h3>🏆 最高分排行榜</h3>
+            <div id="rankList"></div>
+            <button class="btn back-btn" onclick="closeRank()">返回</button>
+        </div>
+
+        <!-- 游戏容器 -->
+        <div class="game-wrap" id="snakePage">
+            <h2 class="game-title">🐍 贪吃蛇</h2>
+            <div class="tips">操作：方向键 ↑ ↓ ← → 控制移动</div>
+            <canvas id="snakeCanvas" width="400" height="400"></canvas>
+            <div class="score-text">得分：<span id="snakeScore">0</span></div>
+            <button class="btn back-btn" onclick="backHome()">返回首页</button>
+        </div>
+
+        <div class="game-wrap" id="brickPage">
+            <h2 class="game-title">🧱 打砖块</h2>
+            <div class="tips">操作：鼠标移动控制挡板，反弹小球打砖块</div>
+            <canvas id="brickCanvas" width="500" height="400"></canvas>
+            <div class="score-text">得分：<span id="brickScore">0</span></div>
+            <button class="btn back-btn" onclick="backHome()">返回首页</button>
+        </div>
+
+        <div class="game-wrap" id="memoryPage">
+            <h2 class="game-title">🧠 记忆翻牌</h2>
+            <div class="tips">操作：点击翻牌，找到相同图案配对</div>
+            <div id="memoryBoard"></div>
+            <div class="step-text">步数：<span id="memorySteps">0</span></div>
+            <button class="btn back-btn" onclick="backHome()">返回首页</button>
+        </div>
+
+        <div class="game-wrap" id="tetrisPage">
+            <h2 class="game-title">🧊 俄罗斯方块</h2>
+            <div class="tips">操作：← → 移动 | ↑ 旋转 | ↓ 加速下落</div>
+            <canvas id="tetrisCanvas" width="300" height="480"></canvas>
+            <div class="score-text">分数：<span id="tetrisScore">0</span></div>
+            <button class="btn back-btn" onclick="backHome()">返回首页</button>
+        </div>
+
+        <div class="game-wrap" id="gobangPage">
+            <h2 class="game-title">⚫ 五子棋</h2>
+            <div class="tips">操作：鼠标点击落子，连成5子获胜（双人）</div>
+            <div id="gobangBox"></div>
+            <button class="btn back-btn" onclick="backHome()">返回首页</button>
+        </div>
+
+        <div class="game-wrap" id="game2048Page">
+            <h2 class="game-title">🔢 2048</h2>
+            <div class="tips">操作：方向键 ↑ ↓ ← → 合并数字</div>
+            <div id="box2048" class="g2048"></div>
+            <div class="score-text">分数：<span id="score2048">0</span></div>
+            <button class="btn back-btn" onclick="backHome()">返回首页</button>
+        </div>
+
+        <div class="game-wrap" id="minePage">
+            <h2 class="game-title">💣 扫雷</h2>
+            <div class="tips">操作：左键点开 | 右键插旗 | 避开地雷</div>
+            <div id="mineBox"></div>
+            <button class="btn back-btn" onclick="backHome()">返回首页</button>
+        </div>
+    </div>
+
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://freetestdata.com/wp-content/uploads/2021/09/Free_Test_Data_100KB_MP3.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        let nowGame = "";
+        let nowDiff = "normal";
+        let bgmOpen = false;
+        const rankKey = "miniGameRank";
+        let rankData = JSON.parse(localStorage.getItem(rankKey)) || {};
+
+        // 背景音乐
+        const bgm = document.getElementById("bgMusic");
+        document.getElementById("bgmBtn").onclick = function(){
+            if(!bgmOpen){
+                bgm.play();
+                bgmOpen = true;
+                this.innerText = "🔇 关闭背景音乐";
+            }else{
+                bgm.pause();
+                bgmOpen = false;
+                this.innerText = "🔊 开启背景音乐";
+            }
+        }
+
+        // 难度弹窗
+        function openDiff(gname){
+            nowGame = gname;
+            document.getElementById("diffModal").style.display = "flex";
+        }
+        function startGame(diff){
+            nowDiff = diff;
+            document.getElementById("diffModal").style.display = "none";
+            hideAll();
+            document.getElementById(nowGame+"Page").style.display = "flex";
+            switch(nowGame){
+                case "snake":initSnake();break;
+                case "brick":initBrick();break;
+                case "memory":initMemory();break;
+                case "tetris":initTetris();break;
+                case "gobang":initGobang();break;
+                case "game2048":init2048();break;
+                case "mine":initMine();break;
+            }
+        }
+        function hideAll(){
+            document.querySelectorAll(".game-wrap").forEach(el=>el.style.display="none");
+            document.getElementById("homePage").style.display="none";
+            document.getElementById("rankBox").style.display="none";
+        }
+        function backHome(){
+            hideAll();
+            document.getElementById("homePage").style.display = "block";
+        }
+
+        // 排行榜
+        document.getElementById("rankBtn").onclick = function(){
+            hideAll();
+            document.getElementById("rankBox").style.display="block";
+            let html = "";
+            for(let k in rankData){
+                html += `<div class="rank-item"><span>${k}</span><span>${rankData[k]}</span></div>`;
+            }
+            document.getElementById("rankList").innerHTML = html||"<div class='rank-item'>暂无记录</div>";
+        }
+        function closeRank(){backHome();}
+        function saveScore(game,score){
+            if(!rankData[game]||score>rankData[game]){
+                rankData[game] = score;
+                localStorage.setItem(rankKey,JSON.stringify(rankData));
+            }
+        }
+
+        // ============== 1.贪吃蛇 ==============
+        function initSnake(){
+            const canvas = document.getElementById('snakeCanvas');
+            const ctx = canvas.getContext('2d');
+            let speed = nowDiff==="easy"?180:nowDiff==="hard"?70:120;
+            let snake = [{x:200,y:200}],dx=20,dy=0;
+            let food = {x:100,y:100},score=0,timer;
+            document.getElementById("snakeScore").innerText = 0;
+            function draw(){
+                ctx.fillStyle="#000818";ctx.fillRect(0,0,400,400);
+                ctx.fillStyle="#4cc9f0";
+                snake.forEach(s=>ctx.fillRect(s.x,s.y,18,18));
+                ctx.fillStyle="#f72585";
+                ctx.fillRect(food.x,food.y,18,18);
+                let head = {x:snake[0].x+dx,y:snake[0].y+dy};
+                snake.unshift(head);
+                if(head.x===food.x&&head.y===food.y){
+                    score+=10;document.getElementById("snakeScore").innerText=score;
+                    food={x:Math.floor(Math.random()*20)*20,y:Math.floor(Math.random()*20)*20};
+                }else snake.pop();
+                if(head.x<0||head.x>=400||head.y<0||head.y>=400||snake.slice(1).some(s=>s.x===head.x&&s.y===head.y)){
+                    clearInterval(timer);alert("蛇蛇撞墙！得分："+score);
+                    saveScore("snake",score);backHome();
+                }
+            }
+            document.onkeydown=e=>{
+                if(e.key==="ArrowLeft"&&dx!==20){dx=-20;dy=0;}
+                if(e.key==="ArrowRight"&&dx!==-20){dx=20;dy=0;}
+                if(e.key==="ArrowUp"&&dy!==20){dx=0;dy=-20;}
+                if(e.key==="ArrowDown"&&dy!==-20){dx=0;dy=20;}
+            }
+            timer = setInterval(draw,speed);
+        }
+
+        // ============== 2.打砖块 ==============
+        function initBrick(){
+            const canvas = document.getElementById('brickCanvas');
+            const ctx = canvas.getContext('2d');
+            let spd = nowDiff==="easy"?2:nowDiff==="hard"?5:3;
+            let ball={x:250,y:300,dx:spd,dy:-spd};
+            let paddle={x:200,y:370,w:100,h:10};
+            let bricks=[],score=0,timer;
+            document.getElementById("brickScore").innerText=0;
+            let row = nowDiff==="easy"?4:nowDiff==="hard"?8:6;
+            for(let i=0;i<row;i++) for(let j=0;j<8;j++) bricks.push({x:j*62+5,y:i*30+20,w:60,h:25,show:true});
+            function draw(){
+                ctx.fillStyle="#000818";ctx.fillRect(0,0,500,400);
+                ctx.fillStyle="#e2e8f0";
+                bricks.forEach(b=>b.show&&ctx.fillRect(b.x,b.y,b.w,b.h));
+                ctx.fillStyle="#7209b7";ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+                ctx.beginPath();ctx.arc(ball.x,ball.y,8,0,Math.PI*2);
+                ctx.fillStyle="#f72585";ctx.fill();
+                ball.x+=ball.dx;ball.y+=ball.dy;
+                if(ball.x<8||ball.x>492)ball.dx=-ball.dx;
+                if(ball.y<8)ball.dy=-ball.dy;
+                if(ball.y>paddle.y-8&&ball.x>paddle.x&&ball.x<paddle.x+paddle.w)ball.dy=-ball.dy;
+                if(ball.y>400){clearInterval(timer);alert("游戏结束 得分："+score);saveScore("brick",score);backHome();}
+                bricks.forEach(b=>{
+                    if(b.show&&ball.x>b.x&&ball.x<b.x+b.w&&ball.y>b.y&&ball.y<b.y+b.h){
+                        ball.dy=-ball.dy;b.show=false;score+=10;
+                        document.getElementById("brickScore").innerText=score;
+                    }
+                });
+                if(bricks.every(b=>!b.show)){clearInterval(timer);alert("通关！");saveScore("brick",score);backHome();}
+            }
+            canvas.onmousemove=e=>{
+                let r=canvas.getBoundingClientRect();
+                paddle.x=e.clientX-r.left-paddle.w/2;
+            }
+            timer=setInterval(draw,16);
+        }
+
+        // ============== 3.记忆翻牌 ==============
+        function initMemory(){
+            let board = document.getElementById("memoryBoard");
+            let steps=0,open=[],done=0;
+            let size = nowDiff==="easy"?6:nowDiff==="hard"?12:8;
+            let base = ['🍎','🍌','🍇','🍊','🍓','🍉','🍒','🍑','🥝','🥥','🍋','🥭'];
+            let cards = base.slice(0,size);
+            cards = [...cards,...cards].sort(()=>Math.random()-0.5);
+            board.innerHTML="";document.getElementById("memorySteps").innerText=0;
+            cards.forEach(c=>{
+                let div = document.createElement("div");
+                div.style.width="80px";div.style.height="80px";
+                div.style.background="#121a33";div.style.border="1px solid var(--border)";
+                div.style.borderRadius="10px";div.style.display="inline-flex";
+                div.style.alignItems="center";div.style.justifyContent="center";
+                div.style.fontSize="35px";div.style.margin="4px";div.style.cursor="pointer";
+                div.dataset.v=c;
+                div.onclick=()=>{
+                    if(div.innerText||open.length>=2)return;
+                    div.innerText=c;open.push(div);
+                    if(open.length===2){
+                        steps++;document.getElementById("memorySteps").innerText=steps;
+                        if(open[0].dataset.v===open[1].dataset.v){
+                            open.forEach(d=>d.style.background="#2d3748");
+                            done++;open=[];
+                            if(done===size){setTimeout(()=>alert("记忆通关！步数："+steps),200);}
+                        }else{
+                            setTimeout(()=>{open.forEach(d=>d.innerText="");open=[];},600);
+                        }
+                    }
+                }
+                board.appendChild(div);
+            });
+        }
+
+        // ============== 4.俄罗斯方块 ==============
+        function initTetris(){
+            const canvas = document.getElementById("tetrisCanvas");
+            const ctx = canvas.getContext('2d');
+            let spd = nowDiff==="easy"?800:nowDiff==="hard"?200:400;
+            let score=0,row=16,col=10,size=30;
+            let map=Array(row).fill().map(()=>Array(col).fill(0));
+            const shapes = [
+                [[1,1,1,1]],
+                [[1,1],[1,1]],
+                [[1,1,1],[0,1,0]],
+                [[1,1,1],[1,0,0]],
+                [[1,1,1],[0,0,1]],
+                [[1,1,0],[0,1,1]],
+                [[0,1,1],[1,1,0]]
+            ];
+            const colorArr = ["#7209b7","#4cc9f0","#f72585","#4361ee","#2ec4b6","#ffd166","#06d6a0"];
+            let now={},timer;
+            function newBlock(){
+                let idx = Math.floor(Math.random()*shapes.length);
+                now.shape = shapes[idx];
+                now.color = colorArr[idx];
+                now.x = Math.floor(col/2)-Math.floor(now.shape[0].length/2);
+                now.y = 0;
+            }
+            function drawMap(){
+                for(let i=0;i<row;i++){
+                    for(let j=0;j<col;j++){
+                        ctx.fillStyle = map[i][j]||"#0b1020";
+                        ctx.fillRect(j*size,i*size,size-1,size-1);
+                    }
+                }
+            }
+            function drawBlock(){
+                now.shape.forEach((r,i)=>{
+                    r.forEach((c,j)=>{
+                        if(c){
+                            ctx.fillStyle=now.color;
+                            ctx.fillRect((now.x+j)*size,(now.y+i)*size,size-1,size-1);
+                        }
+                    })
+                })
+            }
+            function checkMove(x,y,s){
+                for(let i=0;i<s.length;i++){
+                    for(let j=0;j<s[i].length;j++){
+                        if(s[i][j]){
+                            let nx=x+j,ny=y+i;
+                            if(nx<0||nx>=col||ny>=row||(ny>=0&&map[ny][nx]))return false;
+                        }
+                    }
+                }
+                return true;
+            }
+            function lockBlock(){
+                now.shape.forEach((r,i)=>{
+                    r.forEach((c,j)=>{
+                        if(c) map[now.y+i][now.x+j] = now.color;
+                    })
+                })
+                for(let i=row-1;i>=0;i--){
+                    if(map[i].every(v=>v)){
+                        map.splice(i,1);
+                        map.unshift(Array(col).fill(0));
+                        score+=100;document.getElementById("tetrisScore").innerText=score;
+                    }
+                }
+                if(!checkMove(now.x,0,now.shape)){clearInterval(timer);alert("游戏结束 分数："+score);saveScore("tetris",score);backHome();}
+                newBlock();
+            }
+            function down(){
+                if(checkMove(now.x,now.y+1,now.shape)) now.y++;
+                else lockBlock();
+            }
+            newBlock();
+            function render(){drawMap();drawBlock();}
+            timer = setInterval(()=>{down();render();},spd);
+            document.onkeydown=e=>{
+                if(e.key==="ArrowLeft"&&checkMove(now.x-1,now.y,now.shape))now.x--;
+                if(e.key==="ArrowRight"&&checkMove(now.x+1,now.y,now.shape))now.x++;
+                if(e.key==="ArrowDown")down();
+                if(e.key==="ArrowUp"){
+                    let t = now.shape[0].map((_,i)=>now.shape.map(r=>r[i]).reverse());
+                    if(checkMove(now.x,now.y,t))now.shape=t;
+                }
+                render();
+            }
+            render();
+        }
+
+        // ============== 5.五子棋 ==============
+        function initGobang(){
+            let box = document.getElementById("gobangBox");
+            let len = nowDiff==="easy"?10:nowDiff==="hard"?18:15;
+            let chess = [],black=true,over=false;
+            box.innerHTML="";box.style.display="grid";
+            box.style.gridTemplateColumns=`repeat(${len},32px)`;
+            box.style.gap="1px";box.style.margin="10px auto";
+            for(let i=0;i<len;i++) chess[i]=[];
+            for(let i=0;i<len;i++){
+                for(let j=0;j<len;j++){
+                    let cell = document.createElement("div");
+                    cell.style.width="32px";cell.style.height="32px";
+                    cell.style.background="#121a33";cell.style.border="1px solid var(--border)";
+                    cell.dataset.x=i;cell.dataset.y=j;
+                    cell.onclick=()=>{
+                        if(over||chess[i][j])return;
+                        chess[i][j]=black?"b":"w";
+                        cell.style.borderRadius="50%";
+                        cell.style.background=black?"#222":"#eee";
+                        if(checkWin(i,j,black)){
+                            alert((black?"黑棋":"白棋")+"获胜！");over=true;
+                        }
+                        black=!black;
+                    }
+                    box.appendChild(cell);
+                }
+            }
+            function checkWin(x,y,bl){
+                let t=bl?"b":"w";
+                let dir=[[1,0],[0,1],[1,1],[1,-1]];
+                for(let [dx,dy] of dir){
+                    let cnt=1;
+                    for(let s=1;s<5;s++){
+                        let nx=x+dx*s,ny=y+dy*s;
+                        if(nx>=0&&nx<len&&ny>=0&&ny<len&&chess[nx][ny]===t)cnt++;
+                        else break;
+                    }
+                    for(let s=1;s<5;s++){
+                        let nx=x-dx*s,ny=y-dy*s;
+                        if(nx>=0&&nx<len&&ny>=0&&ny<len&&chess[nx][ny]===t)cnt++;
+                        else break;
+                    }
+                    if(cnt>=5)return true;
+                }
+                return false;
+            }
+        }
+
+        // ============== 6.2048 超清颜色版 ==============
+        function init2048(){
+            let box = document.getElementById("box2048");
+            let size = 4; // 固定 4×4 标准棋盘
+            let arr = [], score = 0;
+
+            document.getElementById("score2048").innerText = 0;
+            box.style.display = "grid";
+            box.style.gridTemplateColumns = `repeat(${size}, 48px)`;
+            box.style.gap = "6px";
+            box.style.justifyContent = "center";
+
+            function initArr(){
+                arr = [];
+                for(let i=0;i<size;i++) arr[i] = Array(size).fill(0);
+                addNum();
+                addNum();
+            }
+            function addNum(){
+                let empty = [];
+                for(let i=0;i<size;i++)
+                    for(let j=0;j<size;j++)
+                        if(arr[i][j] === 0) empty.push([i,j]);
+                if(empty.length){
+                    let [x,y] = empty[Math.floor(Math.random() * empty.length)];
+                    arr[x][y] = Math.random() > 0.2 ? 2 : 4;
+                }
+            }
+            function render(){
+                box.innerHTML = "";
+                // 超清高对比度配色
+                const colorMap = {
+                    2: { bg: "#ffffff", color: "#333333" },
+                    4: { bg: "#fff8e1", color: "#333333" },
+                    8: { bg: "#ffc107", color: "#ffffff" },
+                    16: { bg: "#ff9800", color: "#ffffff" },
+                    32: { bg: "#ff5722", color: "#ffffff" },
+                    64: { bg: "#f44336", color: "#ffffff" },
+                    128: { bg: "#4caf50", color: "#ffffff" },
+                    256: { bg: "#2196f3", color: "#ffffff" },
+                    512: { bg: "#9c27b0", color: "#ffffff" },
+                    1024: { bg: "#673ab7", color: "#ffffff" },
+                    2048: { bg: "#000000", color: "#ffffff" }
+                };
+
+                for(let i=0;i<size;i++){
+                    for(let j=0;j<size;j++){
+                        let d = document.createElement("div");
+                        d.className = "cell";
+                        d.style.width = "48px";
+                        d.style.height = "48px";
+                        d.style.fontSize = "20px";
+                        d.style.fontWeight = "bold";
+
+                        let val = arr[i][j];
+                        if (val) {
+                            d.style.background = colorMap[val].bg;
+                            d.style.color = colorMap[val].color;
+                            d.innerText = val;
+                        } else {
+                            d.style.background = "#121a33";
+                            d.innerText = "";
+                        }
+                        box.appendChild(d);
+                    }
+                }
+            }
+            function moveLeft(){
+                let moved = false;
+                for(let i=0;i<size;i++){
+                    let row = arr[i].filter(v => v);
+                    for(let j=0;j<row.length-1;j++){
+                        if(row[j] === row[j+1]){
+                            row[j] *= 2;
+                            score += row[j];
+                            row.splice(j+1,1);
+                            moved = true;
+                        }
+                    }
+                    while(row.length < size) row.push(0);
+                    if(JSON.stringify(arr[i]) !== JSON.stringify(row)) moved = true;
+                    arr[i] = row;
+                }
+                return moved;
+            }
+            function rotate(){
+                let res = [];
+                for(let i=0;i<size;i++) res[i] = [];
+                for(let i=0;i<size;i++)
+                    for(let j=0;j<size;j++)
+                        res[i][j] = arr[size-1-j][i];
+                arr = res;
+            }
+            document.onkeydown = e => {
+                let old = JSON.stringify(arr);
+                let moved = false;
+
+                if(e.key === "ArrowLeft") moved = moveLeft();
+                if(e.key === "ArrowRight"){ rotate(); rotate(); moved = moveLeft(); rotate(); rotate(); }
+                if(e.key === "ArrowUp"){ rotate(); rotate(); rotate(); moved = moveLeft(); }
+                if(e.key === "ArrowDown"){ rotate(); moved = moveLeft(); rotate(); rotate(); rotate(); }
+
+                if(moved){
+                    addNum();
+                    render();
+                    document.getElementById("score2048").innerText = score;
+                }
+            };
+            initArr();
+            render();
+        }
+
+        // ============== 7.扫雷 ==============
+        function initMine(){
+            let box = document.getElementById("mineBox");
+            let row,col,mineNum;
+            if(nowDiff==="easy"){row=8;col=8;mineNum=10;}
+            else if(nowDiff==="hard"){row=20;col=20;mineNum=50;}
+            else{row=12;col=12;mineNum=20;}
+            let map=[],isOpen=[],flag=[],over=false;
+            box.innerHTML="";box.style.display="grid";
+            box.style.gridTemplateColumns=`repeat(${col},26px)`;
+            box.style.justifyContent="center";
+            function init(){
+                over=false;
+                map=Array(row).fill().map(()=>Array(col).fill(0));
+                isOpen=Array(row).fill().map(()=>Array(col).fill(false));
+                flag=Array(row).fill().map(()=>Array(col).fill(false));
+                let cnt=0;
+                while(cnt<mineNum){
+                    let x=Math.floor(Math.random()*row);
+                    let y=Math.floor(Math.random()*col);
+                    if(map[x][y]!==-1){map[x][y]=-1;cnt++;}
+                }
+                for(let i=0;i<row;i++){
+                    for(let j=0;j<col;j++){
+                        if(map[i][j]===-1)continue;
+                        let c=0;
+                        for(let dx=-1;dx<=1;dx++){
+                            for(let dy=-1;dy<=1;dy++){
+                                let nx=i+dx,ny=j+dy;
+                                if(nx>=0&&nx<row&&ny>=0&&ny<col&&map[nx][ny]===-1)c++;
+                            }
+                        }
+                        map[i][j]=c;
+                    }
+                }
+            }
+            function render(){
+                box.innerHTML="";
+                for(let i=0;i<row;i++){
+                    for(let j=0;j<col;j++){
+                        let d=document.createElement("div");
+                        d.style.width="26px";d.style.height="26px";
+                        d.style.border="1px solid var(--border)";
+                        d.style.textAlign="center";d.style.lineHeight="26px";
+                        d.style.fontSize="14px";d.style.cursor="pointer";
+                        if(isOpen[i][j]){
+                            d.style.background="#0b1020";
+                            d.innerText=map[i][j]===-1?"💣":map[i][j]||"";
+                        }else{
+                            d.style.background="#121a33";
+                            d.innerText=flag[i][j]?"🚩":"";
+                        }
+                        d.oncontextmenu=e=>{
+                            e.preventDefault();if(over||isOpen[i][j])return;flag[i][j]=!flag[i][j];render();
+                        }
+                        d.onclick=()=>openCell(i,j);
+                        box.appendChild(d);
+                    }
+                }
+            }
+            function openCell(x,y){
+                if(over||isOpen[x][y]||flag[x][y])return;
+                isOpen[x][y]=true;
+                if(map[x][y]===-1){over=true;alert("踩雷游戏结束");render();return;}
+                if(map[x][y]===0){
+                    for(let dx=-1;dx<=1;dx++){
+                        for(let dy=-1;dy<=1;dy++){
+                            let nx=x+dx,ny=y+dy;
+                            if(nx>=0&&nx<row&&ny>=0&&ny<col)openCell(nx,ny);
+                        }
+                    }
+                }
+                let noMine=0;
+                for(let i=0;i<row;i++)for(let j=0;j<col;j++)if(map[i][j]!==-1&&isOpen[i][j])noMine++;
+                if(noMine===row*col-mineNum){over=true;alert("扫雷通关！");}
+                render();
+            }
+            init();render();
+        }
+    </script>
+</body>
+</html>
